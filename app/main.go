@@ -40,6 +40,7 @@ func main() {
 							OfString: openai.String(prompt),
 						},
 					},
+					OfTool: &openai.ChatCompletionToolMessageParam{},
 				},
 			},
 		},
