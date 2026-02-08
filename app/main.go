@@ -34,63 +34,79 @@ func main() {
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
-	resp, err := client.Chat.Completions.New(context.Background(),
-		openai.ChatCompletionNewParams{
-			Model: "anthropic/claude-haiku-4.5",
-			Messages: []openai.ChatCompletionMessageParamUnion{
-				{
-					OfUser: &openai.ChatCompletionUserMessageParam{
-						Content: openai.ChatCompletionUserMessageParamContentUnion{
-							OfString: openai.String(prompt),
-						},
-					},
+	var messages = []openai.ChatCompletionMessageParamUnion{
+		{
+			OfUser: &openai.ChatCompletionUserMessageParam{
+				Content: openai.ChatCompletionUserMessageParamContentUnion{
+					OfString: openai.String(prompt),
 				},
 			},
-			Tools: []openai.ChatCompletionToolUnionParam{
-				{
-					OfFunction: &openai.ChatCompletionFunctionToolParam{
-						Type: "function",
-						Function: shared.FunctionDefinitionParam{
-							Name:        "Read",
-							Description: param.Opt[string]{Value: "Read and return the contents of a file"},
-							Parameters: shared.FunctionParameters{
-								"type": "object",
-								"properties": map[string]any{
-									"file_path": map[string]any{
-										"type":        "string",
-										"description": "The path to the file to read",
+		},
+	}
+
+	for {
+		resp, err := client.Chat.Completions.New(context.Background(),
+			openai.ChatCompletionNewParams{
+				Model:    "anthropic/claude-haiku-4.5",
+				Messages: messages,
+				Tools: []openai.ChatCompletionToolUnionParam{
+					{
+						OfFunction: &openai.ChatCompletionFunctionToolParam{
+							Type: "function",
+							Function: shared.FunctionDefinitionParam{
+								Name:        "Read",
+								Description: param.Opt[string]{Value: "Read and return the contents of a file"},
+								Parameters: shared.FunctionParameters{
+									"type": "object",
+									"properties": map[string]any{
+										"file_path": map[string]any{
+											"type":        "string",
+											"description": "The path to the file to read",
+										},
 									},
+									"required": []string{"file_path"},
 								},
-								"required": []string{"file_path"},
 							},
 						},
 					},
 				},
 			},
-		},
-	)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-	if len(resp.Choices) == 0 {
-		panic("No choices in response")
-	}
+		)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		if len(resp.Choices) == 0 {
+			panic("No choices in response")
+		}
 
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
+		// You can use print statements as follows for debugging, they'll be visible when running tests.
+		fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
-	if resp.Choices[0].Message.Content != "" {
-		fmt.Println(resp.Choices[0].Message.Content)
-		return
-	}
+		if resp.Choices[0].Message.Content != "" {
+			fmt.Println(resp.Choices[0].Message.Content)
+			break
+		}
 
-	for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-		switch toolCall.Function.Name {
-		case "Read":
-			fmt.Println(read(unmarhsalAndGet(toolCall.Function.Arguments)))
+		assistantMessageParam := resp.Choices[0].Message.ToAssistantMessageParam()
+		messages = append(messages, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistantMessageParam})
+		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
+			switch toolCall.Function.Name {
+			case "Read":
+				toolReturn := read(unmarhsalAndGet(toolCall.Function.Arguments))
+				messages = append(messages, openai.ChatCompletionMessageParamUnion{
+					OfTool: &openai.ChatCompletionToolMessageParam{
+						Content: openai.ChatCompletionToolMessageParamContentUnion{
+							OfString: param.Opt[string]{Value: toolReturn},
+						},
+						Role:       "tool",
+						ToolCallID: toolCall.ID,
+					},
+				})
+			}
 		}
 	}
+
 }
 
 func unmarhsalAndGet(payload string) string {
