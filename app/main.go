@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/codecrafters-io/claude-code-starter-go/internal/pkg/assistant"
-	"github.com/codecrafters-io/claude-code-starter-go/internal/pkg/logger"
+	"github.com/codecrafters-io/claude-code-starter-go/internal/assistant"
+	"github.com/codecrafters-io/claude-code-starter-go/internal/logger"
 )
 
 func main() {

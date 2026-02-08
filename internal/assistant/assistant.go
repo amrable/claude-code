@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codecrafters-io/claude-code-starter-go/internal/pkg/logger"
-	"github.com/codecrafters-io/claude-code-starter-go/internal/pkg/tool"
+	"github.com/codecrafters-io/claude-code-starter-go/internal/logger"
+	"github.com/codecrafters-io/claude-code-starter-go/internal/tool"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
