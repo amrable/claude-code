@@ -90,11 +90,12 @@ func main() {
 
 func unmarhsalAndGet(payload string) string {
 	var t struct {
-		FilePath string
+		FilePath string `json:"file_path"`
 	}
 	json.Unmarshal([]byte(payload), &t)
 	return t.FilePath
 }
+
 func read(filePath string) string {
 	logrus.Infof("reading file path:%s\n", filePath)
 	content, err := os.ReadFile(filePath)
