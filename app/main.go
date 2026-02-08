@@ -78,10 +78,12 @@ func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
-	// TODO: Uncomment the line below to pass the first stage
 	fmt.Print(resp.Choices[0].Message.Content)
 
 	for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-		fmt.Printf("%+v\n", toolCall)
+		switch toolCall.Function.Name {
+		case "Read":
+			fmt.Printf("%+v\n", toolCall.Function.Arguments)
+		}
 	}
 }
