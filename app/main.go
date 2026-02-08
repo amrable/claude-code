@@ -208,5 +208,9 @@ func bash(command string) string {
 	if err != nil {
 		return fmt.Sprintf("error: %v\noutput: %s", err, string(output))
 	}
-	return string(output)
+	res := string(output)
+	if res == "" {
+		res = "succseefully done"
+	}
+	return res
 }
