@@ -202,7 +202,7 @@ func write(filePath, content string) string {
 
 func bash(command string) string {
 	logrus.Infof("executing command: %s\n", command)
-	cmd := exec.Command("bash", "-c", command)
+	cmd := exec.Command("/bin/sh", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Sprintf("error: %v\noutput: %s", err, string(output))
