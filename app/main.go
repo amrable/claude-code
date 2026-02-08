@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/codecrafters-io/claude-code-starter-go/internal/tool"
@@ -25,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	if prompt == "" {
-		panic("Prompt must not be empty")
+		logrus.Fatal("Prompt must not be empty")
 	}
 
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
@@ -35,7 +34,7 @@ func main() {
 	}
 
 	if apiKey == "" {
-		panic("Env variable OPENROUTER_API_KEY not found")
+		logrus.Fatal("Env variable OPENROUTER_API_KEY not found")
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
@@ -50,7 +49,6 @@ func main() {
 	}
 
 	for {
-		logrus.Info("sending...\n")
 		resp, err := client.Chat.Completions.New(context.Background(),
 			openai.ChatCompletionNewParams{
 				Model:    "anthropic/claude-haiku-4.5",
@@ -63,15 +61,14 @@ func main() {
 			},
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
+			logrus.Fatalf("error: %v\n", err)
 		}
 		if len(resp.Choices) == 0 {
-			panic("No choices in response")
+			logrus.Fatal("No choices in response")
 		}
 
 		if len(resp.Choices[0].Message.ToolCalls) == 0 {
-			fmt.Println(resp.Choices[0].Message.Content)
+			logrus.Infoln(resp.Choices[0].Message.Content)
 			break
 		}
 
@@ -103,5 +100,4 @@ func main() {
 			})
 		}
 	}
-
 }

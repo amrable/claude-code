@@ -2,8 +2,6 @@ package tool
 
 import (
 	"encoding/json"
-	"os"
-	"os/exec"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/packages/param"
@@ -59,92 +57,4 @@ func (t *BaseTool[Args]) AsChatCompletionToolUnionParam() openai.ChatCompletionT
 			},
 		},
 	}
-}
-
-type ReadArgs struct {
-	FilePath string `json:"file_path"`
-}
-
-func NewReadTool() Tool {
-	tool := NewBaseTool(
-		"Read",
-		"Read and return the contents of a file",
-		func(args ReadArgs) (string, error) {
-			content, err := os.ReadFile(args.FilePath)
-			if err != nil {
-				return "", err
-			}
-			return string(content), nil
-		},
-		map[string]any{
-			"file_path": map[string]any{
-				"type":        "string",
-				"description": "The path to the file to read",
-			},
-		},
-		[]string{"file_path"},
-	)
-	return &tool
-}
-
-type WriteArgs struct {
-	FilePath string `json:"file_path"`
-	Content  string `json:"content"`
-}
-
-func NewWriteTool() Tool {
-	tool := NewBaseTool(
-		"Write",
-		"Write content to a file",
-		func(args WriteArgs) (string, error) {
-			err := os.WriteFile(args.FilePath, []byte(args.Content), 0644)
-			if err != nil {
-				return "", err
-			}
-			return "write operation is successfully done to " + args.FilePath, nil
-		},
-		map[string]any{
-			"file_path": map[string]any{
-				"type":        "string",
-				"description": "The path of the file to write to",
-			},
-			"content": map[string]any{
-				"type":        "string",
-				"description": "The content to write to the file",
-			},
-		},
-		[]string{"file_path", "content"},
-	)
-	return &tool
-}
-
-type BashArgs struct {
-	Command string `json:"command"`
-}
-
-func NewBashTool() Tool {
-	tool := NewBaseTool(
-		"Bash",
-		"Execute a shell command",
-		func(args BashArgs) (string, error) {
-			cmd := exec.Command("/bin/sh", "-c", args.Command)
-			output, err := cmd.CombinedOutput()
-			res := string(output)
-			if err != nil {
-				return "", err
-			}
-			if res != "" {
-				return res, nil
-			}
-			return "executed " + args.Command + " successfully", nil
-		},
-		map[string]any{
-			"command": map[string]any{
-				"type":        "string",
-				"description": "The command to execute",
-			},
-		},
-		[]string{"command"},
-	)
-	return &tool
 }
