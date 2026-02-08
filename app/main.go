@@ -80,6 +80,11 @@ func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
+	if resp.Choices[0].Message.Content != "" {
+		fmt.Println(resp.Choices[0].Message.Content)
+		return
+	}
+
 	for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 		switch toolCall.Function.Name {
 		case "Read":
