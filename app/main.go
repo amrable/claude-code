@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/codecrafters-io/claude-code-starter-go/internal/tool"
@@ -68,7 +69,7 @@ func main() {
 		}
 
 		if len(resp.Choices[0].Message.ToolCalls) == 0 {
-			logrus.Infoln(resp.Choices[0].Message.Content)
+			fmt.Println(resp.Choices[0].Message.Content)
 			break
 		}
 
