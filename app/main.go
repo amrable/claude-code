@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -82,11 +83,18 @@ func main() {
 	for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 		switch toolCall.Function.Name {
 		case "Read":
-			fmt.Println(read(toolCall.Function.Arguments))
+			fmt.Println(read(unmarhsalAndGet(toolCall.Function.Arguments)))
 		}
 	}
 }
 
+func unmarhsalAndGet(payload string) string {
+	var t struct {
+		FilePath string
+	}
+	json.Unmarshal([]byte(payload), &t)
+	return t.FilePath
+}
 func read(filePath string) string {
 	logrus.Infof("reading file path:%s\n", filePath)
 	content, err := os.ReadFile(filePath)
