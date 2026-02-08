@@ -1,6 +1,13 @@
 ### Claude code
 A minimal claude code like cli tool.
 
+### Setup .env
+```
+OPENROUTER_API_KEY=
+BASE_URL=https://api.moonshot.ai/v1
+MODEL=kimi-k2-0905-preview
+```
+
 ### Example
 
 ```
