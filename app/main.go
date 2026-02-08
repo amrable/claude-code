@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -92,6 +93,25 @@ func main() {
 							},
 						},
 					},
+					{
+						OfFunction: &openai.ChatCompletionFunctionToolParam{
+							Type: "function",
+							Function: shared.FunctionDefinitionParam{
+								Name:        "Bash",
+								Description: param.Opt[string]{Value: "Execute a shell command"},
+								Parameters: shared.FunctionParameters{
+									"type": "object",
+									"properties": map[string]any{
+										"file_path": map[string]any{
+											"type":        "string",
+											"description": "The command to execute",
+										},
+									},
+									"required": []string{"command"},
+								},
+							},
+						},
+					},
 				},
 			},
 		)
@@ -119,6 +139,8 @@ func main() {
 				toolReturn = read(unmarhsalReadAndGet(toolCall.Function.Arguments))
 			case "Write":
 				toolReturn = write(unmarhsalWriteAndGet(toolCall.Function.Arguments))
+			case "Bash":
+				toolReturn = bash(unmarhsalWBashAndGet(toolCall.Function.Arguments))
 			}
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
 				OfTool: &openai.ChatCompletionToolMessageParam{
@@ -151,6 +173,14 @@ func unmarhsalWriteAndGet(payload string) (string, string) {
 	return t.FilePath, t.Content
 }
 
+func unmarhsalWBashAndGet(payload string) string {
+	var t struct {
+		Command string `json:"command"`
+	}
+	json.Unmarshal([]byte(payload), &t)
+	return t.Command
+}
+
 func read(filePath string) string {
 	logrus.Infof("reading file path:%s\n", filePath)
 	content, err := os.ReadFile(filePath)
@@ -167,4 +197,14 @@ func write(filePath, content string) string {
 		return err.Error()
 	}
 	return "write operation is successfully done"
+}
+
+func bash(command string) string {
+	logrus.Infof("executing command: %s\n", command)
+	cmd := exec.Command("bash", "-c", command)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Sprintf("error: %v\noutput: %s", err, string(output))
+	}
+	return string(output)
 }
