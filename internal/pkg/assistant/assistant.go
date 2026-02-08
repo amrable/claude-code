@@ -15,6 +15,7 @@ import (
 
 type Assistant struct {
 	client   openai.Client
+	model    string
 	tools    map[string]tool.Tool
 	messages []openai.ChatCompletionMessageParamUnion
 	scanner  *bufio.Scanner
@@ -22,7 +23,8 @@ type Assistant struct {
 
 func New() (*Assistant, error) {
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
-	baseUrl := "https://api.moonshot.ai/v1"
+	baseUrl := os.Getenv("BASE_URL")
+	model := os.Getenv("MODEL")
 
 	if apiKey == "" {
 		return nil, fmt.Errorf("env variable OPENROUTER_API_KEY not found")
@@ -41,6 +43,7 @@ func New() (*Assistant, error) {
 
 	return &Assistant{
 		client:   client,
+		model:    model,
 		tools:    tools,
 		messages: []openai.ChatCompletionMessageParamUnion{},
 		scanner:  bufio.NewScanner(os.Stdin),
@@ -92,7 +95,7 @@ func (a *Assistant) Process(ctx context.Context, prompt string) error {
 	for {
 		resp, err := a.client.Chat.Completions.New(ctx,
 			openai.ChatCompletionNewParams{
-				Model:    "kimi-k2-0905-preview",
+				Model:    a.model,
 				Messages: a.messages,
 				Tools:    toolParams,
 			},
