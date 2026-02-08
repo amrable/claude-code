@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 
 	"github.com/codecrafters-io/claude-code-starter-go/internal/pkg/assistant"
-	"github.com/sirupsen/logrus"
+	"github.com/codecrafters-io/claude-code-starter-go/internal/pkg/logger"
 )
 
 func main() {
+	logger.Setup()
+	logger.PrintBanner()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -22,14 +26,24 @@ func main() {
 
 	assistant, err := assistant.New()
 	if err != nil {
-		logrus.Fatal(err)
+		logger.Error(err)
+		os.Exit(1)
 	}
 
 	for {
-		prompt := assistant.Prompt()
-		_, err := assistant.Process(ctx, prompt)
+		logger.Prompt()
+		prompt, err := assistant.Prompt(ctx)
 		if err != nil {
-			logrus.Error(err)
+			if err == context.Canceled {
+				fmt.Println("\nGoodbye!")
+				return
+			}
+			logger.Error(err)
+			continue
+		}
+		err = assistant.Process(ctx, prompt)
+		if err != nil {
+			logger.Error(err)
 		}
 	}
 }
