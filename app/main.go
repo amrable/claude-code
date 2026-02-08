@@ -10,6 +10,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/shared"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -77,7 +78,6 @@ func main() {
 
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
-	// fmt.Print(resp.Choices[0].Message.Content)
 
 	for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 		switch toolCall.Function.Name {
@@ -88,6 +88,7 @@ func main() {
 }
 
 func read(filePath string) string {
+	logrus.Infof("reading file path:%s\n", filePath)
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Sprintf("Error reading file: %v", err)
