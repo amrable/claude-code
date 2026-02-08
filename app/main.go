@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/codecrafters-io/claude-code-starter-go/internal/tool"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
@@ -131,17 +132,23 @@ func main() {
 			break
 		}
 
+		readTool := tool.NewReadTool()
+
 		assistantMessageParam := resp.Choices[0].Message.ToAssistantMessageParam()
 		messages = append(messages, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistantMessageParam})
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
 			var toolReturn = ""
+			var err error
 			switch toolCall.Function.Name {
 			case "Read":
-				toolReturn = read(unmarhsalReadAndGet(toolCall.Function.Arguments))
+				toolReturn, err = readTool.Run(toolCall.Function.Arguments)
 			case "Write":
 				toolReturn = write(unmarhsalWriteAndGet(toolCall.Function.Arguments))
 			case "Bash":
 				toolReturn = bash(unmarhsalWBashAndGet(toolCall.Function.Arguments))
+			}
+			if err != nil {
+				logrus.Fatal(err.Error())
 			}
 			logrus.Infoln("toolReturn", toolReturn)
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
@@ -156,14 +163,6 @@ func main() {
 		}
 	}
 
-}
-
-func unmarhsalReadAndGet(payload string) string {
-	var t struct {
-		FilePath string `json:"file_path"`
-	}
-	json.Unmarshal([]byte(payload), &t)
-	return t.FilePath
 }
 
 func unmarhsalWriteAndGet(payload string) (string, string) {
@@ -181,15 +180,6 @@ func unmarhsalWBashAndGet(payload string) string {
 	}
 	json.Unmarshal([]byte(payload), &t)
 	return t.Command
-}
-
-func read(filePath string) string {
-	logrus.Infof("reading file path:%s\n", filePath)
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Sprintf("Error reading file: %v", err)
-	}
-	return string(content)
 }
 
 func write(filePath, content string) string {
