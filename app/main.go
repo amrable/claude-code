@@ -46,6 +46,7 @@ func main() {
 	}
 
 	for {
+		logrus.Info("sending...\n")
 		resp, err := client.Chat.Completions.New(context.Background(),
 			openai.ChatCompletionNewParams{
 				Model:    "anthropic/claude-haiku-4.5",
