@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/codecrafters-io/claude-code-starter-go/internal/tool"
 	"github.com/openai/openai-go/v3"
@@ -133,6 +131,8 @@ func main() {
 		}
 
 		readTool := tool.NewReadTool()
+		writeTool := tool.NewWriteTool()
+		bashTool := tool.NewBashTool()
 
 		assistantMessageParam := resp.Choices[0].Message.ToAssistantMessageParam()
 		messages = append(messages, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistantMessageParam})
@@ -143,9 +143,9 @@ func main() {
 			case "Read":
 				toolReturn, err = readTool.Run(toolCall.Function.Arguments)
 			case "Write":
-				toolReturn = write(unmarhsalWriteAndGet(toolCall.Function.Arguments))
+				toolReturn, err = writeTool.Run(toolCall.Function.Arguments)
 			case "Bash":
-				toolReturn = bash(unmarhsalWBashAndGet(toolCall.Function.Arguments))
+				toolReturn, err = bashTool.Run(toolCall.Function.Arguments)
 			}
 			if err != nil {
 				logrus.Fatal(err.Error())
@@ -163,44 +163,4 @@ func main() {
 		}
 	}
 
-}
-
-func unmarhsalWriteAndGet(payload string) (string, string) {
-	var t struct {
-		FilePath string `json:"file_path"`
-		Content  string `json:"content"`
-	}
-	json.Unmarshal([]byte(payload), &t)
-	return t.FilePath, t.Content
-}
-
-func unmarhsalWBashAndGet(payload string) string {
-	var t struct {
-		Command string `json:"command"`
-	}
-	json.Unmarshal([]byte(payload), &t)
-	return t.Command
-}
-
-func write(filePath, content string) string {
-	logrus.Infof("writing %s to path %s\n", content, filePath)
-	err := os.WriteFile(filePath, []byte(content), os.ModePerm)
-	if err != nil {
-		return err.Error()
-	}
-	return "write operation is successfully done"
-}
-
-func bash(command string) string {
-	logrus.Infof("executing command: %s\n", command)
-	cmd := exec.Command("/bin/sh", "-c", command)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Sprintf("error: %v\noutput: %s", err, string(output))
-	}
-	res := string(output)
-	if res == "" {
-		res = "succseefully done"
-	}
-	return res
 }
