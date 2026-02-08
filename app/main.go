@@ -80,4 +80,8 @@ func main() {
 
 	// TODO: Uncomment the line below to pass the first stage
 	fmt.Print(resp.Choices[0].Message.Content)
+
+	for _, toolCall := range resp.Choices[0].Message.ToolCalls {
+		fmt.Printf("%+v\n", toolCall)
+	}
 }
