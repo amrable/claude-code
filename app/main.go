@@ -142,6 +142,7 @@ func main() {
 			case "Bash":
 				toolReturn = bash(unmarhsalWBashAndGet(toolCall.Function.Arguments))
 			}
+			logrus.Infoln("toolReturn", toolReturn)
 			messages = append(messages, openai.ChatCompletionMessageParamUnion{
 				OfTool: &openai.ChatCompletionToolMessageParam{
 					Content: openai.ChatCompletionToolMessageParamContentUnion{
