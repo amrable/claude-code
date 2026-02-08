@@ -10,8 +10,13 @@ import (
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
-	"github.com/openai/openai-go/v3/shared"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	ReadTool  = tool.NewReadTool()
+	WriteTool = tool.NewWriteTool()
+	BashTool  = tool.NewBashTool()
 )
 
 func main() {
@@ -51,67 +56,9 @@ func main() {
 				Model:    "anthropic/claude-haiku-4.5",
 				Messages: messages,
 				Tools: []openai.ChatCompletionToolUnionParam{
-					{
-						OfFunction: &openai.ChatCompletionFunctionToolParam{
-							Type: "function",
-							Function: shared.FunctionDefinitionParam{
-								Name:        "Read",
-								Description: param.Opt[string]{Value: "Read and return the contents of a file"},
-								Parameters: shared.FunctionParameters{
-									"type": "object",
-									"properties": map[string]any{
-										"file_path": map[string]any{
-											"type":        "string",
-											"description": "The path to the file to read",
-										},
-									},
-									"required": []string{"file_path"},
-								},
-							},
-						},
-					},
-					{
-						OfFunction: &openai.ChatCompletionFunctionToolParam{
-							Type: "function",
-							Function: shared.FunctionDefinitionParam{
-								Name:        "Write",
-								Description: param.Opt[string]{Value: "Write content to a file"},
-								Parameters: shared.FunctionParameters{
-									"type": "object",
-									"properties": map[string]any{
-										"file_path": map[string]any{
-											"type":        "string",
-											"description": "The path of the file to write to",
-										},
-										"content": map[string]any{
-											"type":        "string",
-											"description": "The content to write to the file",
-										},
-									},
-									"required": []string{"file_path", "content"},
-								},
-							},
-						},
-					},
-					{
-						OfFunction: &openai.ChatCompletionFunctionToolParam{
-							Type: "function",
-							Function: shared.FunctionDefinitionParam{
-								Name:        "Bash",
-								Description: param.Opt[string]{Value: "Execute a shell command"},
-								Parameters: shared.FunctionParameters{
-									"type": "object",
-									"properties": map[string]any{
-										"file_path": map[string]any{
-											"type":        "string",
-											"description": "The command to execute",
-										},
-									},
-									"required": []string{"command"},
-								},
-							},
-						},
-					},
+					ReadTool.AsChatCompletionToolUnionParam(),
+					WriteTool.AsChatCompletionToolUnionParam(),
+					BashTool.AsChatCompletionToolUnionParam(),
 				},
 			},
 		)
@@ -130,10 +77,6 @@ func main() {
 			break
 		}
 
-		readTool := tool.NewReadTool()
-		writeTool := tool.NewWriteTool()
-		bashTool := tool.NewBashTool()
-
 		assistantMessageParam := resp.Choices[0].Message.ToAssistantMessageParam()
 		messages = append(messages, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistantMessageParam})
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
@@ -141,11 +84,11 @@ func main() {
 			var err error
 			switch toolCall.Function.Name {
 			case "Read":
-				toolReturn, err = readTool.Run(toolCall.Function.Arguments)
+				toolReturn, err = ReadTool.Run(toolCall.Function.Arguments)
 			case "Write":
-				toolReturn, err = writeTool.Run(toolCall.Function.Arguments)
+				toolReturn, err = WriteTool.Run(toolCall.Function.Arguments)
 			case "Bash":
-				toolReturn, err = bashTool.Run(toolCall.Function.Arguments)
+				toolReturn, err = BashTool.Run(toolCall.Function.Arguments)
 			}
 			if err != nil {
 				logrus.Fatal(err.Error())
